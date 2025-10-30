@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope
+    xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:adr="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:dsc="http://schemas.xmlsoap.org/ws/2005/04/discovery"
+    xmlns:target="http://www.onvif.org/ver10/network/wsdl">
+    <env:Header>
+        <adr:MessageID>uuid:$UUID$</adr:MessageID>
+        <adr:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</adr:To>
+        <adr:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</adr:Action>
+    </env:Header>
+    <env:Body>
+        <dsc:Probe>
+        <dsc:Types>target:NetworkVideoTransmitter</dsc:Types>
+        </dsc:Probe>
+    </env:Body>
+</env:Envelope>
