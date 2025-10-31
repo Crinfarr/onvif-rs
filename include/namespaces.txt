@@ -1,0 +1,31 @@
+ONVIF Spec
+----------
+xml schemas                         http://www.onvif.org/ver10/schema
+device services                     http://www.onvif.org/ver10/device/wsdl
+media services                      http://www.onvif.org/ver10/media/wsdl
+event services                      http://www.onvif.org/ver10/events/wsdl
+errors                              http://www.onvif.org/ver10/error
+remote discovery                    http://www.onvif.org/ver10/network/wsdl
+topics                              http://www.onvif.org/ver10/topics
+
+SOAP Spec
+---------
+wsdl namespace                      http://schemas.xmlsoap.org/wsdl/
+wsdl soap 1.2 binding               http://schemas.xmlsoap.org/wsdl/soap12/
+wsdl get/post binding               http://schemas.xmlsoap.org/wsdl/http/
+SOAP encoding namespace             http://www.w3.org/2003/05/soap-encoding
+SOAP envelope namespace             http://www.w3.org/2003/05/soap-envelope
+XS namespace                        http://www.w3.org/2001/XMLSchema
+XSI namespace                       http://www.w3.org/2001/XMLSchema-instance
+WS discovery namespace              http://schemas.xmlsoap.org/ws/2005/04/discovery
+WS discovery addressing namespace   http://schemas.xmlsoap.org/ws/2004/08/addressing
+WS addressing namespace             http://www.w3.org/2005/08/addressing
+WS topics                           http://docs.oasis-open.org/wsn/t-1
+WS notifications                    http://docs.oasis-open.org/wsn/b-2
+XOP namespace                       http://www.w3.org/2004/08/xop/include
+
+prefixless namespaces
+---------------------
+topic expressions                   http://docs.oasis-open.org/wsn/t-1/TopicExpression/Concrete
+ONVIF topic expressions             http://www.onvif.org/ver10/tev/topicExpression/ConcreteSet
+ONVIF filter dialect                http://www.onvif.org/ver10/tev/messageContentFilter/ItemFilter
