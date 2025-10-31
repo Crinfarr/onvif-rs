@@ -11,7 +11,7 @@
     </env:Header>
     <env:Body>
         <dsc:Probe>
-        <dsc:Types>target:NetworkVideoTransmitter</dsc:Types>
+        <dsc:Types>target:Device</dsc:Types>
         </dsc:Probe>
     </env:Body>
 </env:Envelope>
