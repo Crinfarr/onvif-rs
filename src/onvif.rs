@@ -1,94 +1,93 @@
 use std::{net::{IpAddr, SocketAddr}, time::{Duration, SystemTime}};
 use base64::{Engine, prelude::BASE64_STANDARD};
 use color_eyre::eyre::{eyre, Context, Result};
+use http_body_util::BodyExt;
+use hyper::{Method, Request, client::{self, conn::http1}};
+use hyper_util::rt::TokioIo;
 use rand::{Fill, Rng, rngs::ThreadRng};
 use sha1::Digest;
-use tokio::{net::UdpSocket, time::timeout};
-use tracing::{Level, event, instrument};
+use tokio::{net::{TcpStream, UdpSocket}, time::timeout};
+use tracing::{Instrument, Level, event, instrument, span};
 use uuid::Uuid;
 
-const ONVIF_DISCOVER_UNAUTHED_TEMPLATE:&'static str=include_str!("../include/Discovery_Unauthenticated.xml");
-const ONVIF_DISCOVER_AUTHED_TEMPLATE:&'static str=include_str!("../include/Discovery_Authenticated.xml");
+const ONVIF_DISCOVER_TEMPLATE:&'static str=include_str!("../include/Discovery.xml");
+const ONVIF_DATETIME_TEMPLATE:&'static str=include_str!("../include/SystemDatetime.xml");
 
-pub struct Onvif_Client {
-    inner:UdpSocket,
+pub struct OnvifClient {
     pub target:SocketAddr,
     rng_source:ThreadRng
 }
-impl std::fmt::Debug for Onvif_Client {
+impl std::fmt::Debug for OnvifClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!("Onvif_Client({})", self.target.to_string()))?;
             Ok(())
     }
 }
 
-impl Onvif_Client {
+impl OnvifClient {
     pub async fn new(target:SocketAddr) -> Result<Self> {
         let rv = Self {
-            inner: UdpSocket::bind("0.0.0.0:0").await.wrap_err("While binding UDP socket")?,
             target:target.clone(),
             rng_source:rand::rng()
         };
-
         Ok(rv)
     }
 
-    #[instrument(skip(user,pass))]
-    pub async fn probe_authed<'a>(&mut self, user:&'a str, pass:&'a str) -> Result<Vec<u8>> {
-        let mut nonce:[u8;32] = [0u8;32];
-        self.rng_source.fill(&mut nonce);
-        let nonce_b64 = BASE64_STANDARD.encode(nonce);
-        event!(Level::DEBUG, "Generated nonce {nonce_b64}");
-        let now:chrono::DateTime<chrono::Utc> = chrono::Utc::now();
-        event!(Level::DEBUG, "Using NOW={}", now.format("%FT%TZ"));
-        let mut hasher = sha1::Sha1::new();
-        hasher.update([
-            Vec::from(nonce),
-            now.format("%TT%FZ").to_string().into(),
-            pass.into()
-        ].concat());
-         let digest = hasher.finalize();
-         event!(Level::DEBUG, "digest hash: {}", BASE64_STANDARD.encode(digest));
-         let payload = ONVIF_DISCOVER_AUTHED_TEMPLATE
-             .replace("$USERNAME$", user)
-             .replace("$PASSHASH$", &BASE64_STANDARD.encode(digest))
-             .replace("$NONCE$", &nonce_b64)
-             .replace("$NOW$", &now.format("%FT%TZ").to_string())
-             .replace("$UUID$", &Uuid::new_v4().to_string());
-        Ok(self.send_with_timeout(payload.as_bytes(), 3000).await.wrap_err("While sending authenticated probe")?)
+    #[allow(unused)]
+    pub async fn discover() -> Result<()> {
+        let client = UdpSocket::bind("0.0.0.0:0").await?;
+        if !client.broadcast()? {
+            client.set_broadcast(true)?;
+            event!(Level::DEBUG, "Enabled broadcasting");
+        }
+        event!(Level::DEBUG, "Sending discovery packet");
+        client.send_to(
+            ONVIF_DISCOVER_TEMPLATE.replace("$UUID$", &Uuid::new_v4().to_string()).as_bytes(),
+            "239.255.255.250:3702"
+        ).await?;
+        event!(Level::DEBUG, "Waiting for response");
+        let mut rbuf:Vec<u8> = Vec::new();
+        let (_amt, rec_from) = client.recv_buf_from(&mut rbuf).await?;
+        event!(Level::TRACE, "{rec_from} sent {:#?}", BASE64_STANDARD.encode(rbuf));
+        todo!();
     }
-    #[instrument(skip(payload))]
-    async fn send_with_timeout(&mut self, payload:&[u8], max_time:u16)->Result<Vec<u8>> {
-        event!(Level::TRACE, "Payload: {}", String::from_utf8(payload.to_vec())?);
-        let mut buf:Vec<u8> = Vec::default();
-        for try_count in 1u8..4u8 {
-            event!(Level::DEBUG, "Sending datagram to {}", self.target);
-            self.inner.connect(self.target).await.wrap_err("while connecting socket")?;
-            self.inner.send(&payload).await.wrap_err("while sending datagram")?;
-            event!(Level::DEBUG, "Waiting for response from {}", self.target);
-            match timeout(Duration::from_millis(max_time as u64), self.inner.recv_buf(&mut buf)).await {
-                Ok(rec) => {
-                    rec.wrap_err(format!("While receiving response from {}", self.target))?;
-                    event!(Level::DEBUG, "Request succeeded");
-                    break;
-                },
-                Err(e) => {
-                    event!(Level::DEBUG, "Attempt {try_count} failed: {e}");
+    #[instrument]
+    pub async fn get_device_datetime(&mut self) -> Result<()> {
+        let host = self.target.ip().to_canonical().to_string();
+        let port = self.target.port().to_string();
+        let url=format!("http://{host}:{port}/onvif/device_service").parse::<hyper::Uri>()?;
+        event!(Level::DEBUG, "Using host={host} port={port}");
+        event!(Level::DEBUG, "Connecting {host}");
+        let stream = TcpStream::connect(self.target).await?;
+        let io = TokioIo::new(stream);
+        event!(Level::DEBUG, "Trying handshake");
+        let (mut sender, connection)= http1::handshake(io).await?;
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                event!(Level::ERROR, "Connection failed: {e}");
+            }
+        }.instrument(span!(Level::WARN, "")));
+        event!(Level::DEBUG, "Building request");
+        let req = Request::builder()
+            .method(Method::POST)
+            .uri(&url)
+            .header(hyper::header::HOST, url.authority().ok_or(eyre!("No authority found"))?.clone().as_str())
+            .body(ONVIF_DATETIME_TEMPLATE.to_string())?;
+        event!(Level::DEBUG, "Firing request");
+        let mut res = sender.send_request(req).await?;
+        let mut body:Vec<u8> = Vec::new();
+        event!(Level::DEBUG, "Collecting body");
+        while let Some(next_frame) = res.frame().await {
+            let frame = next_frame?;
+            if let Some(chunk) = frame.data_ref() {
+                for byte in chunk {
+                    body.push(*byte);
                 }
             }
         }
-        if buf.len() == 0 {
-            return Err(eyre!("No data received from {}", self.target));
-        }
+        event!(Level::TRACE, "Response: {:#?}", String::from_utf8(body));
 
-        Ok(buf)
-    }
 
-    #[instrument]
-    pub async fn probe(&mut self)->Result<Vec<u8>> {
-        Ok(self.send_with_timeout(
-            ONVIF_DISCOVER_UNAUTHED_TEMPLATE.replace("$UUID$", &Uuid::new_v4().to_string()).as_bytes(),
-            3000
-        ).await.wrap_err("While sending probe")?)
+        Ok(())
     }
 }
