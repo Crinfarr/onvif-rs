@@ -9,8 +9,8 @@ use tokio::net::{TcpStream, UdpSocket};
 use tracing::{Instrument, Level, event, instrument, span};
 use uuid::Uuid;
 
-static ONVIF_DISCOVER_TEMPLATE: &'static str = include_str!("../include/Discovery.xml");
-static ONVIF_DATETIME_TEMPLATE: &'static str = include_str!("../include/SystemDatetime.xml");
+const ONVIF_DISCOVER_TEMPLATE: &'static str = include_str!("../include/Discovery.xml");
+const ONVIF_DATETIME_TEMPLATE: &'static str = include_str!("../include/SystemDatetime.xml");
 
 pub struct OnvifClient {
     pub target: SocketAddr,
