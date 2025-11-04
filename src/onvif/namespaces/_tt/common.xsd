@@ -150,7 +150,6 @@ IN NO EVENT WILL THE CORPORATION OR ITS MEMBERS OR THEIR AFFILIATES BE LIABLE FO
 		</xs:sequence>
 		<xs:anyAttribute processContents="lax" />
 	</xs:complexType>
-	<!--TODO PAST HERE-->
 	<xs:complexType name="PTZMoveStatus">
 		<xs:sequence>
 			<xs:element name="PanTilt" type="tt:MoveStatus" minOccurs="0">
@@ -279,6 +278,7 @@ IN NO EVENT WILL THE CORPORATION OR ITS MEMBERS OR THEIR AFFILIATES BE LIABLE FO
 	<!--===============================-->
 	<!--       Scene Description Types -->
 	<!--===============================-->
+	<!--TODO PAST HERE-->
 	<xs:complexType name="Transformation">
 		<xs:sequence>
 			<xs:element name="Translate" type="tt:Vector" minOccurs="0" />
