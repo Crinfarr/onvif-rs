@@ -9,6 +9,10 @@ use tokio::net::{TcpStream, UdpSocket};
 use tracing::{Instrument, Level, event, instrument, span};
 use uuid::Uuid;
 
+mod namespaces;
+#[allow(unused_imports)]
+use namespaces::*;
+
 const ONVIF_DISCOVER_TEMPLATE: &'static str = include_str!("../include/Discovery.xml");
 const ONVIF_DATETIME_TEMPLATE: &'static str = include_str!("../include/SystemDatetime.xml");
 
