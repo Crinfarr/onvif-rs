@@ -290,4 +290,19 @@ pub struct LocalOrientation {
     #[serde(rename = "#text")]
     content:String
 }
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct SphericalCoordinate {
+    #[serde(rename = "@Distance")]
+    ///Distance in meters to the object.
+    pub distance:f32,
+    #[serde(rename = "@ElevationAngle")]
+    ///Elevation angle in the range -90 to 90 degrees, where 0 is in level with the x-y plane.
+    pub elevation_angle:f32,
+    #[serde(rename = "@AzimuthAngle")]
+    ///Azimuth angle in the range -180 to 180 degrees counter clockwise, where 0 is rightwards.
+    pub azimuth_angle:f32,
+    #[serde(rename = "#text")]
+    content:String,
+}
 //TODO
