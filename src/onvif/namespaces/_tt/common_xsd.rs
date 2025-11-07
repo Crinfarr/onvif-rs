@@ -266,4 +266,16 @@ pub struct GeoOrientation {
     #[serde(rename = "#text")]
     content:String,
 }
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct LocalLocation {
+    #[serde(rename = "@x")]
+    pub x:f32,
+    #[serde(rename = "@y")]
+    pub y:f32,
+    #[serde(rename = "@z")]
+    pub z:f32,
+    #[serde(rename = "#text")]
+    pub content:String
+}
 //TODO
