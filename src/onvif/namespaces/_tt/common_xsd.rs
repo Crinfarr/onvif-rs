@@ -276,6 +276,18 @@ pub struct LocalLocation {
     #[serde(rename = "@z")]
     pub z:f32,
     #[serde(rename = "#text")]
-    pub content:String
+    content:String
+}
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct LocalOrientation {
+    #[serde(rename = "@pan")]
+    pub pan:f32,
+    #[serde(rename = "@tilt")]
+    pub tilt:f32,
+    #[serde(rename = "@zoom")]
+    pub zoom:f32,
+    #[serde(rename = "#text")]
+    content:String
 }
 //TODO
