@@ -218,4 +218,40 @@ pub struct ColorClusterItem {
 <!--       Scene Description Types -->
 <!--===============================-->
 */
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct Transformation {
+    #[serde(rename = "Translate")]
+    pub translate:Option<Vector>,
+    #[serde(rename = "Scale")]
+    pub scale:Option<Vector>,
+    #[serde(rename = "Extension")]
+    pub extension:Option<TransformationExtension>
+}
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct TransformationExtension {
+    #[serde(rename = "#text")]
+    content:String,
+}
+/*
+<!--===============================-->
+<!--  Location/Orientation Types   -->
+<!--===============================-->
+ */
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct GeoLocation {
+    #[serde(rename = "@lon")]
+    ///East west location as angle.
+    pub longitude:f64,
+    #[serde(rename = "@lat")]
+    ///North south location as angle.
+    pub latitude:f64,
+    #[serde(rename = "@elevation")]
+    ///Hight in meters above sea level.
+    pub elevation:f64,
+    #[serde(rename = "#text")]
+    content:String
+}
 //TODO
